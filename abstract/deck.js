@@ -31,6 +31,7 @@ class Card{
     }
 }
 class Deck {
+    //? A deck is a group of cards that no one can access, which differenciates it from a Hand, which are shown to the specified persons
     /**
      * A deck of cards
      * @param {Iterable<Card>} cardsIterable An iterable of cards
@@ -47,22 +48,25 @@ class Deck {
      * @param {Number} [index] The index in which the card will be added, if not specified it will add it to a random index
      */
     add(card,index=undefined){
+        this._add(card,index)
+    }
+    _add(card,index){//? to protect from inheritance
         if(!index)index = random.int(0,this.cards.length-1)
         //todo Finish this
     }
     /**
-     * Picks a cart from the deck
-     * @param {Number} index Index of the card you want to pick (use negative numbers to start from the end)
+     * grabs a cart from the deck
+     * @param {Number} [index] Index of the card you want to grab (use negative numbers to start from the end)
      * @param {Boolean} [keepIn] If you don't want the card to be removed from the deck 
-     * @returns {Card} The picked card
+     * @returns {Card} The grabed card
      */
-    pick(index,keepIn=false){
+    grab(index=0,keepIn=false){
         if(index < 0 ) index = this.cards.length + index;
         if(keepIn)return this.cards[index];
         return this.cards.splice(index,1);
     }
     /**
-     * Shuffles the deck using the Fischer-Yates algorithm and the pseudo random Math.random() method
+     * Shuffles the deck using the Fischer-Yates algorithm and the pseudo-random Math.random() method
      */
     shuffle(){
         let ind = this.cards.length-1 
@@ -81,7 +85,7 @@ class Deck {
      * @param {Number} [groupsize] the size of the group of cards, defaults to Math.floor(cards.lenght)
      * @returns {Array<Deck>} The decks with the remainder at the first index (if there is no remainder it will be an empty list)
      */
-    static split(deck,groups,remainder,groupSize=undefined){
+    static split(deck,groups,remainder,groupSize=undefined){//todo this
         let decks = new Array(groups+1)
         if(!groupSize)groupSize = Math.floor(this.cards.length)
         let currentGroupSize = 0
@@ -93,8 +97,18 @@ class Deck {
         }
     }
 }
+class Hand extends Deck{
+    constructor(cardsIterable){
+        super(cardsIterable)
+    }
+    add(card,whoCanSee,whoCanMove){
+        card.whoCanMove = whoCanMove;
+        card.whoCanSee = whoCanSee;
+        this._add(card,0)
+    }
+}
 
-export default {Deck,Suit,Card}
+export default {Deck,Suit,Card,Hand}
 /**
  * A CSS Legal Color Value
  * @typedef {String} StringColor
