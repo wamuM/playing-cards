@@ -1,0 +1,5 @@
+{
+    "tasks": {
+        "jsdoc":"jsdoc . -c ./jsdoc.json & start ./out/index.html"
+    }
+  }

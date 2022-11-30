@@ -23,6 +23,8 @@ Handling the WebSocket upgrade in an async way was quite hard
 ### Todo for next session or before:
 Finish server code 
 Finish draw commands
+Finish the random tools 
+Start Basic Module organization
 ## 1/12/2022:
 ### Achieved:
 ### Problems encountered:
