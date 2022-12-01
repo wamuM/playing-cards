@@ -15,8 +15,9 @@ class Game{
      * @returns {Match} The spawned match
      */
     spawnMatch(player){
+        let code;
         do{
-            let code = random.string("QWERTYUIOASDFGHJKLZXCVBNM1234567890",5)
+            code = random.string("QWERTYUIOASDFGHJKLZXCVBNM1234567890",5)
         }
         while(this.matches.get(code))
             
@@ -26,7 +27,7 @@ class Game{
     }
     async listenAt(options){
         for await(ws of serveWebSocket(listener,options)){
-            let player = await this._waitForConnection(ws)
+            const player = await this._waitForConnection(ws)
             this.players.set(player.token,player)
         }
     }
@@ -34,23 +35,24 @@ class Game{
         return Promise((resolve,reject)=>{
             ws.onmessage = (messageEvent)=>{
                 const data = messageEvent.data.split("\r\n")
-                const [verb,promiseIdentifier,token] = data[0].split(" ")
+                const [verb,_promiseIdentifier,token] = data[0].split(" ")
                 if(verb == "CONNECT"){
                     if(token){
-                        let player = Game.players.get(token)
+                        const player = Game.players.get(token)
                         if(player == undefined){
                             ws.close(4403,"Forbidden")
                             reject("Wrong token")
                         }
                         resolve(player)
                     }else{
+                        let token;
                         do{
-                            let token = random.string("QWERTYUIOPASDFGHJKLZXCVBNM_.,-123456789qwertyuiopasdfghjklzxcvbnm+",10)
+                            token = random.string("QWERTYUIOPASDFGHJKLZXCVBNM_.,-123456789qwertyuiopasdfghjklzxcvbnm+",10)
                         }while(this.players.get(token))
                         resolve(new ServerSidePlayer(ws,token))
                     }
                 }else{
-                    ws.close(4406,"The first request should always be CONNECT")
+                    ws.close(4405,"The first request should always be CONNECT")
                 }
             }
         })
@@ -82,10 +84,19 @@ class ServerSidePlayer{
             this.ws = null 
         }
     }
+    /**
+     * Connects the ServerSidePlayer to a websocket
+     * @param {WebSocket} ws The websocket to be connected to
+     */
     connect(ws){
         this.ws = ws
     }
     get connected(){return this.ws==null?false:this.ws.readyState==1}
+    /**
+     * Checks if the token authorises to be this player
+     * @param {String} token The player auth token
+     * @returns {Boolean} if the player was authorised 
+     */
     auth(token){
         return token==this.token
     }
@@ -96,16 +107,37 @@ class ServerSidePlayer{
      */
     _onmessage(messageEvent){
         const data = messageEvent.data.split("\r\n")
-        const [verb,promiseIdentifier,token,gameCode] = data[0].split(" ")
+        const [verb,token,_promiseIdentifier] = data[0].split(" ")
 
         if(!token)this.disconnect(4401,"Unauthorized")
         if(!this.auth(token))this.disconnect("4403","Forbidden")
+        if(this.promises.get(_promiseIdentifier))this.promises.get(_promiseIdentifier).resolve(data)
+        switch(verb){
+            case "":
+            break;
+            default:
+                this.disconnect(4406,"Unknown webSocket verb")
+            break;
+        }
     }
-    send(verb,body,responsePromiseIdentifier){
-        let str = verb+"\r\n"+body.join("\r\n")
+    /**
+     * Sends a request to the ClientSidePlayer
+     * @param {String} verb The request verb (see {@tutorial webSocketVerbs| list of verbs})
+     * @param {String} body The request body
+     * @param {String} [promiseIdentifier] someting to uniquely identify the request so the client can send a reply
+     * @returns {Promise} Returns a promise if promiseIdentifier was set that will resolved once the client replies
+     * @see protocole
+     */
+    send(verb,body,promiseIdentifier=false){
+        let str = verb
+        if(promiseIdentifier)str += " "+promiseIdentifier
+        str += "\r\n"+body.join("\r\n")
         this.ws.send(str)
-        if(responseAsPromise){
-            return 
+        if(promiseIdentifier){
+            const promise = new Promise((resolve,reject)=>{
+                this.promises.set(promiseIdentifier,{resolve,reject})
+            })
+            return promise
         }
         
     }

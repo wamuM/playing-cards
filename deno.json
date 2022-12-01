@@ -1,5 +1,6 @@
 {
-    "tasks": {
-        "jsdoc":"jsdoc . -c ./jsdoc.json & start ./out/index.html"
+    "tasks":{
+        "jsdoc":"jsdoc . -c ./jsdoc.json && start ./jsdoc/index.html",
+        "test":"deno run test.js"
     }
-  }
+}

@@ -16,7 +16,8 @@
     },
     "opts":{
         "tutorials":"./docs/",
-        "readme":"./README.md"
+        "readme":"./README.md",
+        "destination":"./jsdoc/"
     }
 }
 
