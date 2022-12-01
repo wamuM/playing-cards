@@ -37,7 +37,7 @@ function background() {
 
 
 /**
- * 
+ * draws a Card 
  * @param {Drawable} drawableCard 
  * @param {Number} zoom 
  */
