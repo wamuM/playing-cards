@@ -7,6 +7,7 @@ class Game{
     constructor(name){
         this.name = name
         this.players = new Map();
+        this.matches = new Map();
     }
     /**
      * Generates a match with it's code and it's admin player
@@ -14,8 +15,13 @@ class Game{
      * @returns {Match} The spawned match
      */
     spawnMatch(player){
-        const code = random.string("QWERTYUIOASDFGHJKLZXCVBNM1234567890",5)
-        const match = new Match(code,player)
+        do{
+            let code = random.string("QWERTYUIOASDFGHJKLZXCVBNM1234567890",5)
+        }
+        while(this.matches.get(code))
+            
+        const match = new Match(player,code)
+        this.matches.set(code,match)
         return match
     }
     async listenAt(options){
@@ -38,7 +44,10 @@ class Game{
                         }
                         resolve(player)
                     }else{
-                        resolve(new ServerSidePlayer(ws))
+                        do{
+                            let token = random.string("QWERTYUIOPASDFGHJKLZXCVBNM_.,-123456789qwertyuiopasdfghjklzxcvbnm+",10)
+                        }while(this.players.get(token))
+                        resolve(new ServerSidePlayer(ws,token))
                     }
                 }else{
                     ws.close(4406,"The first request should always be CONNECT")
@@ -53,9 +62,9 @@ class ServerSidePlayer{
      * Represents the player and the WebSocket that links it with the server
      * @param {WebSocket} ws The WebSocket with the player
      */
-    constructor(ws){
+    constructor(ws,token){
         this.ws = ws;
-        this.token = random.string("QWERTYUIOPASDFGHJKLZXCVBNM_.,-123456789qwertyuiopasdfghjklzxcvbnm+",10)
+        this.token = token;
         this.ws.send(`TOKEN ${token}`)//sends the auth token to the player
         this.ws.onmessage = this._onmessage
     }
@@ -102,10 +111,14 @@ class ServerSidePlayer{
     }
 }
 class Match{
-    constructor(code,admin){
+    constructor(admin,code){
         this.code = code
         this.admin = admin 
         this.admin.ws.send(`JOINED ${code} ADMIN`)
+        this.players = new Set();
+    }
+    join(player){
+        this.players.add(player)
     }
 }
 
