@@ -27,5 +27,7 @@ Finish the random tools
 Start Basic Module organization
 ## 1/12/2022:
 ### Achieved:
+Finished random tools
+Started 
 ### Problems encountered:
 ### Todo for next session:

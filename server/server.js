@@ -5,7 +5,8 @@ class Game{
      * @param {String} name The name of the game
      */
     constructor(name){
-
+        this.name = name
+        this.players = new Map();
     }
     /**
      * Generates a match with it's code and it's admin player
@@ -17,6 +18,35 @@ class Game{
         const match = new Match(code,player)
         return match
     }
+    async listenAt(options){
+        for await(ws of serveWebSocket(listener,options)){
+            let player = await this._waitForConnection(ws)
+            this.players.set(player.token,player)
+        }
+    }
+    _waitForConnection(ws){
+        return Promise((resolve,reject)=>{
+            ws.onmessage = (messageEvent)=>{
+                const data = messageEvent.data.split("\r\n")
+                const [verb,promiseIdentifier,token] = data[0].split(" ")
+                if(verb == "CONNECT"){
+                    if(token){
+                        let player = Game.players.get(token)
+                        if(player == undefined){
+                            ws.close(4403,"Forbidden")
+                            reject("Wrong token")
+                        }
+                        resolve(player)
+                    }else{
+                        resolve(new ServerSidePlayer(ws))
+                    }
+                }else{
+                    ws.close(4406,"The first request should always be CONNECT")
+                }
+            }
+        })
+    }
+
 }
 class ServerSidePlayer{
     /**
@@ -47,9 +77,8 @@ class ServerSidePlayer{
         this.ws = ws
     }
     get connected(){return this.ws==null?false:this.ws.readyState==1}
-    auth(header){
-        let hd = header.split(" ")
-        return hd[2]==this.token
+    auth(token){
+        return token==this.token
     }
     /**
      * Listens to message events, requests sent by the player
@@ -58,11 +87,19 @@ class ServerSidePlayer{
      */
     _onmessage(messageEvent){
         const data = messageEvent.data.split("\r\n")
-        if(!this.auth(data[0])){
-            this.disconnect()
-        }
-    }
+        const [verb,promiseIdentifier,token,gameCode] = data[0].split(" ")
 
+        if(!token)this.disconnect(4401,"Unauthorized")
+        if(!this.auth(token))this.disconnect("4403","Forbidden")
+    }
+    send(verb,body,responsePromiseIdentifier){
+        let str = verb+"\r\n"+body.join("\r\n")
+        this.ws.send(str)
+        if(responseAsPromise){
+            return 
+        }
+        
+    }
 }
 class Match{
     constructor(code,admin){
@@ -99,3 +136,4 @@ async function serveWebSocket(listener,options){
 }
 
 
+export default {Game,ServerSidePlayer,Match,serveWebSocket}
