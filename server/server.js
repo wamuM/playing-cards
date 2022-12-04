@@ -25,12 +25,67 @@ class Game{
         this.matches.set(code,match)
         return match
     }
-    async listenAt(options){
-        for await(ws of serveWebSocket(listener,options)){
-            const player = await this._waitForConnection(ws)
-            this.players.set(player.token,player)
+    /**
+     * Listens 
+     * @param {Deno.TcpListenOptions} options The connection options ()
+     */
+    async listen(options){
+        for await(const connection of Deno.listen(options)){
+            const httpConn = Deno.serveHttp(connection)
+            console.log("<=====================>")
+            console.log(httpConn)
+            console.log(connection)
+            for await(const requestEvent of serve(httpConn)){
+                //Process url
+                if(requestEvent == null)return;
+                const url = new URL(requestEvent.request.url);
+                let filepath = decodeURIComponent(url.pathname);
+                if(!options.url)options.url = "/";
+
+                if(requestEvent.request.headers.get("upgrade") == "websocket"){//Upgrade to websocket
+                    console.log(requestEvent.request)
+                    console.log("test")
+                    if(!filepath.startsWith(options.url))return;//filters out other url requests
+                    const {socket,response} = Deno.upgradeWebSocket(requestEvent.request)
+                    await requestEvent.respondWith(response)
+                    const player = await this._waitForConnection(socket)
+                    this.players.set(player.token,player)
+                }else{//Normal HTTP File Server
+                    let file;
+                    filepath = filepath.slice(options.url.length)
+                    try{
+                        switch(filepath){
+                            case "":
+                                filepath = "/../UI/index.html";
+                            break;
+                            case "script.js":
+                                filepath = "/../UI/script.js";
+                            break;
+                            case "style.css":
+                                filepath = "/../UI/style.css";
+                            break;
+                            default:
+                                filepath = "/../UI/index.html";
+                            break;
+                        }
+                        filepath = new URL(import.meta.url+"/.."+filepath+"?name="+this.name);
+                        file = await Deno.open(filepath,{read:true})
+                        await requestEvent.respondWith(new Response(file.readable));
+                    }catch{
+                        await requestEvent.respondWith(new Response("404 Not Found",{status:404}));
+                    }
+            
+                }
+            }
         }
     }
+    /**
+     * Creates a promise that will be resolved once the client has connected 
+     * @param {WebSocket} ws The websokcet the client will connect with
+     * @returns {Promise} A promise to the ServerSidePlayer
+     * @resolve ServerSidePlayer
+     * @reject Error
+     */
     _waitForConnection(ws){
         return Promise((resolve,reject)=>{
             ws.onmessage = (messageEvent)=>{
@@ -154,25 +209,14 @@ class Match{
     }
 }
 
-async function serveWebSocket(listener,options){
-    const connection = listener||Deno.listen(options)
-    const http = Deno.serveHttp(await connection.accept())
+function serve(httpConn){
     return {
         next(){
-            return new Promise(function promiseHandler(resolve,reject){
-                    http.nextRequest().then((request)=>{
-                        if(req.headers.get("upgrader") != "WebSocket"){
-                            req.respondWith(new Response(null,{status:501}))
-                            return promiseHandler(resolve,reject)
-                        }else{
-                            req.respondWith(response)
-                            const {socket:ws, response} = Deno.upgradeWebSocket(request)
-                            resolve({done:false,value:ws})
-                        }
-                    }).catch((err)=>{
-                        reject(err)
-                    })
-                })
+            return new Promise((resolve,reject)=>{
+                httpConn.nextRequest().then((requestEvent)=>{
+                    resolve({done:false,value:requestEvent})
+                }).catch(err=>reject(err))
+            })
         },
         [Symbol.asyncIterator](){
             return this;
@@ -181,4 +225,4 @@ async function serveWebSocket(listener,options){
 }
 
 
-export default {Game,ServerSidePlayer,Match,serveWebSocket}
+export default {Game,ServerSidePlayer,Match}
