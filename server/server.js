@@ -29,38 +29,38 @@ class Game{
         return match
     }
     /**
-     * Listens 
-     * @param {Deno.TcpListenOptions} options The connection options ()
+     * Servers the game at the specified port and url 
+     * @param {ExtendedDenoTcpListenOptions} options The connection options
      */
     async listen(options){
         for await (const connection of Deno.listen(options)){
-            (async () => {
-              for await (const requestEvent of Deno.serveHttp(connection)){
+            http: for await (const requestEvent of Deno.serveHttp(connection)){
+                //Filter urls
                 const url = new URL(requestEvent.request.url)
                 let path = url.pathname
-                if(!options.url)options.url = "/"
-                if(!path.startsWith(options.url))return;
-                
-                if(requestEvent.request.headers.get("upgrade") == "websocket"){//Upgrade to WebSocket
+                if(!options.url)options.url = "/";
+                if(!path.startsWith(options.url))continue http;
+
+                //Upgrade to WebSocket
+                if(requestEvent.request.headers.get("upgrade") == "websocket"){
                     const {socket,response} = Deno.upgradeWebSocket(requestEvent.request)
                     await requestEvent.respondWith(response)
                     const player = await this._waitForConnection(socket)
+                    this.onconnect?.(player)
                     this.players.add(player)
-                    return;
                 }else{
+                //HTTP File Server   
                     let file;
                     path = path.slice(options.url.length)
                     try{
                         switch(path){
-                            case "":
-                                path = "/../UI/index.html";
-                            break;
                             case "script.js":
                                 path = "/../UI/script.js";
                             break;
                             case "style.css":
                                 path = "/../UI/style.css";
                             break;
+                            case "":
                             default:
                                 path = "/../UI/index.html";
                             break;
@@ -69,12 +69,10 @@ class Game{
                         file = await Deno.open(path,{read:true})
                         await requestEvent.respondWith(new Response(file.readable));
                     }catch{
-                        console.log(requestEvent)
                         await requestEvent.respondWith(new Response("404 Not Found",{status:404}));
                     }
                 }
               }
-            })();
         }
     }
     /**
@@ -89,24 +87,20 @@ class Game{
             ws.onmessage = (messageEvent)=>{
                 const data = messageEvent.data.split("\r\n")
                 const [verb,token] = data[0].split(" ")
-                if(verb == "CONNECT"){
-                    if(token){
-                        const player = this.players.get(token)
-                        if(player == undefined){
-                            ws.close(4403,"Forbidden")
-                            reject("Wrong token")
-                        }
-                        resolve(player)
-                    }else{
-                        let token;
-                        do{
-                            token = random.string("QWERTYUIOPASDFGHJKLZXCVBNM_.,-123456789qwertyuiopasdfghjklzxcvbnm+",10)
-                        }while(this.players.get(token))
-                        resolve(new ServerSidePlayer(ws,token))
-                    }
-                }else{
-                    ws.close(4405,"The first request should always be CONNECT")
+                if(verb != "CONNECT")return ws.close(4405,"The first request should always be CONNECT")
+                let player = this.player.get(token)
+                if(player)return resolve(player)
+                if(token){//&& !player
+                    ws.close(4403,"Forbidden")
+                    reject("Wrong token")
+                    return;
                 }
+                do{
+                    token = random.string("QWERTYUIOPASDFGHJKLZXCVBNM_.,-123456789qwertyuiopasdfghjklzxcvbnm+",10)
+                }while(this.players.get(token))
+                player = new ServerSidePlayer(ws,token)
+                this.onjoin?.(player)
+                resolve(player)
             }
         })
     }
@@ -197,14 +191,20 @@ class ServerSidePlayer{
     }
 }
 class Match{
+    /**
+     * A match
+     * @param {ServerSidePlayer} admin The admin of the match
+     * @param {String} code The match code
+     */
     constructor(admin,code){
         this.code = code
         this.admin = admin 
-        this.admin.ws.send(`JOINED ${code} ADMIN`)
+        this.admin.send("JOINED",[code,"isAdmin=true"])
         this.players = new Set();
     }
     join(player){
         this.players.add(player)
+        this.player.send("JOINED",this.code)
     }
 }
 class Collection extends Map{
@@ -220,5 +220,14 @@ class Collection extends Map{
     add(element){
         this.set(element[this.idKeyName],element)
     }
+    static add(collection,element){
+        collection.set(element[collection.idKeyName],element)
+    }
 }
 export default {Game,ServerSidePlayer,Match}
+
+/**
+ * Deno.TcpListenOptions with extra attributes
+ * @typedef {Deno.TcpListenOptions} ExtendedDenoTcpListenOptions
+ * @property {String} url A base url (i.e "/playing-cards" for localhost:8080/playing-cards), defaults to "/"
+ */

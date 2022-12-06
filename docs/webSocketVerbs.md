@@ -1,13 +1,24 @@
 ## Server to Client(Player)
-### TOKEN
+### <a name="TOKEN"></a>TOKEN
+Sent when a player connects withouth specifiying a token
 ```
-TOKEN None
+TOKEN
 ${token}
 ``` 
-``promiseId``: 
-``token``:
+- `token`: The new auth token 
+### JOINED
+Sent when a player joins a match
+```
+JOINED
+${code}
+${[isAdmin]}
+``` 
+- `code`: The match code
+- `isAdmin`: If the player is the match admin (left blank if not)
 ## Client(Player) to Server
 ### CONNECT
+Sent to connect a websocket to a player
 ```
-CONNECT New ${[token]} ${[gameCode]}
+CONNECT ${[token]}
 ```
+- `token` The auth token (if left blank, the server will provide one with [`TOKEN`](#token))
