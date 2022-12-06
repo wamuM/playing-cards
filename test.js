@@ -1,9 +1,18 @@
 import pc from "./mod.js"
-const {Game,serveWebSocket} = pc;
+const {Game} = pc;
 const game = new Game("Black Jack")
-for await(ws of game.serveWebSocket(false,{port:8080}){
-    
+
+game.settings = {
+    maxPlayers:undefined,
+    minPlayers:2
 }
+game.addEventListener("join",(player)=>{
+
+})
+game.addEventListener("start",(game)=>{
+    
+})
+game.listen({port:8080})
 
 
 
