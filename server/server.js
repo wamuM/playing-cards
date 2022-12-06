@@ -6,8 +6,11 @@ class Game{
      */
     constructor(name){
         this.name = name
-        this.players = new Map();
-        this.matches = new Map();
+        this.players = new Collection("token");
+        this.matches = new Collection("code");
+    }
+    addEventListener(eventName,eventListener){
+        this["on"+eventName] = eventListener
     }
     /**
      * Generates a match with it's code and it's admin player
@@ -22,7 +25,7 @@ class Game{
         while(this.matches.get(code))
             
         const match = new Match(player,code)
-        this.matches.set(code,match)
+        this.matches.add(match)
         return match
     }
     /**
@@ -30,53 +33,48 @@ class Game{
      * @param {Deno.TcpListenOptions} options The connection options ()
      */
     async listen(options){
-        for await(const connection of Deno.listen(options)){
-            const httpConn = Deno.serveHttp(connection)
-            console.log("<=====================>")
-            console.log(httpConn)
-            console.log(connection)
-            for await(const requestEvent of serve(httpConn)){
-                //Process url
-                if(requestEvent == null)return;
-                const url = new URL(requestEvent.request.url);
-                let filepath = decodeURIComponent(url.pathname);
-                if(!options.url)options.url = "/";
-
-                if(requestEvent.request.headers.get("upgrade") == "websocket"){//Upgrade to websocket
-                    console.log(requestEvent.request)
-                    console.log("test")
-                    if(!filepath.startsWith(options.url))return;//filters out other url requests
+        for await (const connection of Deno.listen(options)){
+            (async () => {
+              for await (const requestEvent of Deno.serveHttp(connection)){
+                const url = new URL(requestEvent.request.url)
+                let path = url.pathname
+                if(!options.url)options.url = "/"
+                if(!path.startsWith(options.url))return;
+                
+                if(requestEvent.request.headers.get("upgrade") == "websocket"){//Upgrade to WebSocket
                     const {socket,response} = Deno.upgradeWebSocket(requestEvent.request)
                     await requestEvent.respondWith(response)
                     const player = await this._waitForConnection(socket)
-                    this.players.set(player.token,player)
-                }else{//Normal HTTP File Server
+                    this.players.add(player)
+                    return;
+                }else{
                     let file;
-                    filepath = filepath.slice(options.url.length)
+                    path = path.slice(options.url.length)
                     try{
-                        switch(filepath){
+                        switch(path){
                             case "":
-                                filepath = "/../UI/index.html";
+                                path = "/../UI/index.html";
                             break;
                             case "script.js":
-                                filepath = "/../UI/script.js";
+                                path = "/../UI/script.js";
                             break;
                             case "style.css":
-                                filepath = "/../UI/style.css";
+                                path = "/../UI/style.css";
                             break;
                             default:
-                                filepath = "/../UI/index.html";
+                                path = "/../UI/index.html";
                             break;
                         }
-                        filepath = new URL(import.meta.url+"/.."+filepath+"?name="+this.name);
-                        file = await Deno.open(filepath,{read:true})
+                        path = new URL(import.meta.url+"/.."+path+"?name="+this.name);
+                        file = await Deno.open(path,{read:true})
                         await requestEvent.respondWith(new Response(file.readable));
                     }catch{
+                        console.log(requestEvent)
                         await requestEvent.respondWith(new Response("404 Not Found",{status:404}));
                     }
-            
                 }
-            }
+              }
+            })();
         }
     }
     /**
@@ -87,13 +85,13 @@ class Game{
      * @reject Error
      */
     _waitForConnection(ws){
-        return Promise((resolve,reject)=>{
+        return new Promise((resolve,reject)=>{
             ws.onmessage = (messageEvent)=>{
                 const data = messageEvent.data.split("\r\n")
-                const [verb,_promiseIdentifier,token] = data[0].split(" ")
+                const [verb,token] = data[0].split(" ")
                 if(verb == "CONNECT"){
                     if(token){
-                        const player = Game.players.get(token)
+                        const player = this.players.get(token)
                         if(player == undefined){
                             ws.close(4403,"Forbidden")
                             reject("Wrong token")
@@ -122,7 +120,7 @@ class ServerSidePlayer{
     constructor(ws,token){
         this.ws = ws;
         this.token = token;
-        this.ws.send(`TOKEN ${token}`)//sends the auth token to the player
+        this.send("TOKEN",this.token) //sends the auth token to the player
         this.ws.onmessage = this._onmessage
     }
     /**
@@ -185,6 +183,7 @@ class ServerSidePlayer{
      */
     send(verb,body,promiseIdentifier=false){
         let str = verb
+        if(!(body instanceof Array))body = [body];
         if(promiseIdentifier)str += " "+promiseIdentifier
         str += "\r\n"+body.join("\r\n")
         this.ws.send(str)
@@ -208,21 +207,18 @@ class Match{
         this.players.add(player)
     }
 }
-
-function serve(httpConn){
-    return {
-        next(){
-            return new Promise((resolve,reject)=>{
-                httpConn.nextRequest().then((requestEvent)=>{
-                    resolve({done:false,value:requestEvent})
-                }).catch(err=>reject(err))
-            })
-        },
-        [Symbol.asyncIterator](){
-            return this;
-        }
+class Collection extends Map{
+    /**
+     * A Map of elements that uses a common attribute as a key (i.e Players mapped by their token, Matches mapped by their code, etc )
+     * @param {String} idKeyName The name of the attribute
+     * @param  {...any} args The arguments of the Map constructor
+     */
+    constructor(idKeyName,...args){
+        super(...args)
+        this.idKeyName = idKeyName
+    }
+    add(element){
+        this.set(element[this.idKeyName],element)
     }
 }
-
-
 export default {Game,ServerSidePlayer,Match}

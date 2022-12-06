@@ -10,16 +10,16 @@ function int(a,b){
 /**
  * Returns a pseudo-random string from another string
  * @param {String} str The string from which characters are picked
- * @param {Number} lenght The lenght of the final string
+ * @param {Number} length The lenght of the final string
  */
-function string(str,lenght){
-    let i = lenght;
+function string(str,length){
+    let i = length;
     let s = ""
     while(i>0){
-        s += str[int(0,str.lenght-1)]
+        s += str[int(0,str.length-1)]
         i--;
     }
-    return str
+    return s
 }
 
 export default {int,string}
