@@ -28,6 +28,32 @@ Start Basic Module organization
 ## 1/12/2022:
 ### Achieved:
 Finished random tools
-Started 
+Started basic module organization
 ### Problems encountered:
 ### Todo for next session:
+Finish server code 
+Finish draw commands
+## 5/12/2022:
+### Achieved:
+Nothing
+### Problems encountered:
+No work was done as everyone was either busy or sick
+### Todo for next session:
+Finish server code 
+Finish draw commands
+Start client
+Start moving carts
+Do default decks
+Do test black jack game 
+## 7/12/2022:
+### Achieved
+Finished server code 
+Started client
+### Problems encountered:
+The code requires sudo to be run
+### Todo for next session:
+Finish draw commands
+Start moving carts
+Do default decks
+Do test black jack game 
+

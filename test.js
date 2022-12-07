@@ -7,7 +7,7 @@ game.settings = {
     minPlayers:2
 }
 game.addEventListener("join",(player)=>{
-
+    
 })
 game.addEventListener("start",(game)=>{
     

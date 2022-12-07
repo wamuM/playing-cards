@@ -5,6 +5,7 @@ class Game{
      * @param {String} name The name of the game
      */
     constructor(name){
+        /**The name of the game */
         this.name = name
         this.players = new Collection("token");
         this.matches = new Collection("code");
@@ -46,6 +47,7 @@ class Game{
                     const {socket,response} = Deno.upgradeWebSocket(requestEvent.request)
                     await requestEvent.respondWith(response)
                     const player = await this._waitForConnection(socket)
+                    player.send("NAME",this.name)
                     this.onconnect?.(player)
                     this.players.add(player)
                 }else{
@@ -54,12 +56,17 @@ class Game{
                     path = path.slice(options.url.length)
                     try{
                         switch(path){
+                            case "draw.js":
+                                path = "/../UI/draw.js"
+                            break;
                             case "script.js":
                                 path = "/../UI/script.js";
                             break;
                             case "style.css":
                                 path = "/../UI/style.css";
                             break;
+                            case "background.jpg":
+                                path ="/../UI/background.jpg"
                             case "":
                             default:
                                 path = "/../UI/index.html";
@@ -217,11 +224,27 @@ class Collection extends Map{
         super(...args)
         this.idKeyName = idKeyName
     }
+    /**
+     *  Adds an element to the collection using it's this.idKeyName attribute as a key (may overwrite an element with the same key)
+     * @param {*} element The element to be added 
+     */
     add(element){
         this.set(element[this.idKeyName],element)
     }
     static add(collection,element){
         collection.set(element[collection.idKeyName],element)
+    }
+    /**
+     * Gets the element from the collection (but unlike get, it returns errorValue if the this.idKeyName attribute is no longer equal to the key)
+     * @param {*} key The key of the element
+     * @param {*} [errorValue] The value that will be returned if an error is encountered (defaults to undefined)
+     * @returns {*} The corresponding element
+     */
+    take(key,errorValue=undefined){
+       let element = this.get(key)
+       if(!element)return errorValue;
+       if(element[this.idKeyName] == key)return element;
+       return errorValue 
     }
 }
 export default {Game,ServerSidePlayer,Match}
