@@ -1,5 +1,8 @@
 import random from "../tools/random.js"
 
+/**
+ * Class representing a Card
+ */
 class Card{
     /**
      * Creates a card instance
@@ -23,12 +26,13 @@ class Card{
 
 
 }
-
+/**
+ * Class representing a Deck
+ */
 class Deck {
     /**
      * 
      * @param {Iterable<Card>} cards The iterable of cards that makes up the deck
-     * 
      */
     constructor(cards){
         this.cards = new Array(cards)
@@ -85,15 +89,7 @@ class Deck {
 
     }
 /**
- * R
- 
- * 
- 
- 
- 
- 
- 
- everses the Deck
+ * Flips the deck
  */
     flip() {
         this.cards.forEach( card => {

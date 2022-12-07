@@ -1,0 +1,4 @@
+maxPlayers
+minPlayers
+allowMidGameJoins
+allowMidGameReconnections

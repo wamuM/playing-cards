@@ -1,14 +1,28 @@
+/**
+ * Server related module
+ * @module server
+ */
+
 import random from "../tools/random.js"
-class Game{
+import eventHandler from "./eventHandler.js";
+/**
+ * The game object that encapsulates all players and game logic
+ */
+class Game{//!  MAIN CLASS
     /**
-     * The game object that encapsulates all players and game logic
+     * Creates a Game instance
      * @param {String} name The name of the game
+     * @param {gameSettings} [defaultSettings] Optional settings for all matches
      */
-    constructor(name){
+    constructor(name,defaultSettings={}){
         /**The name of the game */
         this.name = name
         this.players = new Collection("token");
+        //? This lets you access the game a player is in within the player scope
+        this.players._addModifier = (_col,plr)=>plr.game = this;
         this.matches = new Collection("code");
+
+        this.settings = defaultSettings
     }
     addEventListener(eventName,eventListener){
         this["on"+eventName] = eventListener
@@ -67,6 +81,7 @@ class Game{
                             break;
                             case "background.jpg":
                                 path ="/../UI/background.jpg"
+                            break;
                             case "":
                             default:
                                 path = "/../UI/index.html";
@@ -113,10 +128,13 @@ class Game{
     }
 
 }
+/**
+ * Represents the player and the WebSocket that links it with the server
+ */
 class ServerSidePlayer{
     /**
-     * Represents the player and the WebSocket that links it with the server
-     * @param {WebSocket} ws The WebSocket with the player
+     * Creates a ServerSidePlayer linked to a ws
+     * @param {WebSocket} ws The WebSocket linked with the player
      */
     constructor(ws,token){
         this.ws = ws;
@@ -160,19 +178,7 @@ class ServerSidePlayer{
      * @see {@tutorial WebSocketVerbs| List of all possible requests and replies}
      */
     _onmessage(messageEvent){
-        const data = messageEvent.data.split("\r\n")
-        const [verb,token,_promiseIdentifier] = data[0].split(" ")
-
-        if(!token)this.disconnect(4401,"Unauthorized")
-        if(!this.auth(token))this.disconnect("4403","Forbidden")
-        if(this.promises.get(_promiseIdentifier))this.promises.get(_promiseIdentifier).resolve(data)
-        switch(verb){
-            case "":
-            break;
-            default:
-                this.disconnect(4406,"Unknown webSocket verb")
-            break;
-        }
+        eventHandler(this,messageEvent)
     }
     /**
      * Sends a request to the ClientSidePlayer
@@ -197,9 +203,12 @@ class ServerSidePlayer{
         
     }
 }
+/**
+ * A match (room) in which a game is played 
+ */
 class Match{
     /**
-     * A match
+     * Creates a match
      * @param {ServerSidePlayer} admin The admin of the match
      * @param {String} code The match code
      */
@@ -207,16 +216,20 @@ class Match{
         this.code = code
         this.admin = admin 
         this.admin.send("JOINED",[code,"isAdmin=true"])
-        this.players = new Set();
+        this.players = new Collection("token")
+        //? This lets you access the match within the player scope
+        this.player._addModifier = (_col,plr)=>plr.match = this;
     }
     join(player){
         this.players.add(player)
         this.player.send("JOINED",this.code)
     }
 }
+/**
+ * A Map of elements that uses a common attribute as a key (i.e Players mapped by their token, Matches mapped by their code, etc )
+ */
 class Collection extends Map{
     /**
-     * A Map of elements that uses a common attribute as a key (i.e Players mapped by their token, Matches mapped by their code, etc )
      * @param {String} idKeyName The name of the attribute
      * @param  {...any} args The arguments of the Map constructor
      */
@@ -229,6 +242,7 @@ class Collection extends Map{
      * @param {*} element The element to be added 
      */
     add(element){
+        this._addModifier?.(this,element)
         this.set(element[this.idKeyName],element)
     }
     static add(collection,element){
@@ -253,4 +267,11 @@ export default {Game,ServerSidePlayer,Match}
  * Deno.TcpListenOptions with extra attributes
  * @typedef {Deno.TcpListenOptions} ExtendedDenoTcpListenOptions
  * @property {String} url A base url (i.e "/playing-cards" for localhost:8080/playing-cards), defaults to "/"
+ */
+
+//todo Finnish this
+/**
+ * Settings for a match
+ * @typedef {gameSettings} 
+ * @property 
  */

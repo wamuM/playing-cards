@@ -1,6 +1,6 @@
 import pc from "./mod.js"
 const {Game} = pc;
-const game = new Game("Black Jack")
+const game = new Game("Black Jack",defaultSettings)
 
 game.settings = {
     maxPlayers:undefined,

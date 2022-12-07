@@ -30,5 +30,7 @@ CONNECT ${[token]}
 ```
 - `token` The auth token (if left blank, the server will provide one with [`TOKEN`](#token))
 ### CREATE
+Sent to create a match with the player as an admin, is answered by ([`JOINED`](#joined))
 ```
 CREATE
+```

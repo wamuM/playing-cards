@@ -13,14 +13,16 @@ ws.onopen = ()=>{
         btnJoin.onclick = ()=>{
             let value = inptCode.value
             if(value==""||!value)return alert("You need to write the match code to join it!")
-            
+            ws.send(`JOIN ${TOKEN}\r\n${value}`)
         }
         btnCreate.onclick = ()=>{
             
         }
     }
 }
-ws.onclose = console.error;
+ws.onclose = (closeEvent)=>{
+    console.error(`${closeEvent.code} ${closeEvent.reason}`)
+}
 ws.onmessage = (messageEvent)=>{
     const data = messageEvent.data.split("\r\n")
     const [verb,promiseIdentifier] = data[0].split(" ")
@@ -36,6 +38,12 @@ ws.onmessage = (messageEvent)=>{
             document.getElementById("lobbyTitle").onload = ()=>{
                 document.getElementById("lobbyTitle").innerHTML = data[1] 
             }
+        break;
+        case "WRONGCODE":
+            alert("That match is either full or doesn't exist, please try another code or create your own match")
+        break;
+        case "JOINED":
+            
         break;
         default:
             this.disconnect(4406,"Unknown webSocket verb")
