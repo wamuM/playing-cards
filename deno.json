@@ -1,6 +1,6 @@
 {
     "tasks":{
-        "jsdoc":"jsdoc . -c ./jsdoc.json && start ./jsdoc/index.html",
+        "jsdoc":"jsdoc ./mod.js -c ./jsdoc.json",
         "test":"deno run --allow-net --allow-read test.js"
     }
 }
