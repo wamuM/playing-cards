@@ -6,7 +6,6 @@
 function eventHandler(player,messageEvent){
     const data = messageEvent.data.split("\r\n")
     const [verb,token,_promiseIdentifier] = data[0].split(" ")
-
     if(!token)player.disconnect(4401,"Unauthorized")
     if(!player.auth(token))player.disconnect("4403","Forbidden")
     if(player.promises.get(_promiseIdentifier))player.promises.get(_promiseIdentifier).resolve(data)

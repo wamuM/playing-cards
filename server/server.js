@@ -5,6 +5,7 @@
 
 import random from "../tools/random.js"
 import eventHandler from "./eventHandler.js";
+import httpFileServer from "./httpfileserver.js"
 /**
  * The game object that encapsulates all players and game logic
  */
@@ -49,52 +50,37 @@ class Game{//!  MAIN CLASS
      */
     async listen(options){
         for await (const connection of Deno.listen(options)){
-            http: for await (const requestEvent of Deno.serveHttp(connection)){
-                //Filter urls
-                const url = new URL(requestEvent.request.url)
-                let path = url.pathname
-                if(!options.url)options.url = "/";
-                if(!path.startsWith(options.url))continue http;
-
-                //Upgrade to WebSocket
-                if(requestEvent.request.headers.get("upgrade") == "websocket"){
-                    const {socket,response} = Deno.upgradeWebSocket(requestEvent.request)
-                    await requestEvent.respondWith(response)
-                    const player = await this._waitForConnection(socket)
-                    player.send("NAME",this.name)
-                    this.onconnect?.(player)
-                    this.players.add(player)
-                }else{
-                //HTTP File Server   
-                    let file;
+            (async()=>{
+                http: for await (const requestEvent of Deno.serveHttp(connection)){
+                    //Filter urls
+                    const url = new URL(requestEvent.request.url)
+                    let path = url.pathname
+                    if(!options.url)options.url = "/";
+                    if(!path.startsWith(options.url))continue http;
                     path = path.slice(options.url.length)
+
+                    //Serve http file server if normal
+                    if(!(requestEvent.request.headers.get("upgrade") == "websocket")){
+                        await httpFileServer(path,requestEvent)
+                        continue http
+                    }
+                    //Upgrade if websocket
+                    const {socket,response} = Deno.upgradeWebSocket(requestEvent.request)
+                                   await requestEvent.respondWith(response)
                     try{
-                        switch(path){
-                            case "draw.js":
-                                path = "/../UI/draw.js"
-                            break;
-                            case "script.js":
-                                path = "/../UI/script.js";
-                            break;
-                            case "style.css":
-                                path = "/../UI/style.css";
-                            break;
-                            case "background.jpg":
-                                path ="/../UI/background.jpg"
-                            break;
-                            case "":
-                            default:
-                                path = "/../UI/index.html";
-                            break;
+                        const player = await this._waitForConnection(socket)
+                        player.send("NAME",this.name)
+                        this.onconnect?.(player)
+                        this.players.add(player)
+                    }catch(error){
+                        try{
+                            await requestEvent.respondWith(new Response(error,{status:400}))
+                        }catch{
+                            void undefined //couldn't answer because something already answered
                         }
-                        path = new URL(import.meta.url+"/.."+path+"?name="+this.name);
-                        file = await Deno.open(path,{read:true})
-                        await requestEvent.respondWith(new Response(file.readable));
-                    }catch{
-                        await requestEvent.respondWith(new Response("404 Not Found",{status:404}));
                     }
                 }
-              }
+            })();
         }
     }
     /**
@@ -108,10 +94,11 @@ class Game{//!  MAIN CLASS
         return new Promise((resolve,reject)=>{
             ws.onmessage = (messageEvent)=>{
                 const data = messageEvent.data.split("\r\n")
-                const [verb,token] = data[0].split(" ")
+                let [verb,token] = data[0].split(" ")
                 if(verb != "CONNECT")return ws.close(4405,"The first request should always be CONNECT")
-                let player = this.player.get(token)
-                if(player)return resolve(player)
+                let player = this.players.get(token)
+                if(player && !player?.ws)player.connect(ws)
+                if(player?.ws)return resolve(player)
                 if(token){//&& !player
                     ws.close(4403,"Forbidden")
                     reject("Wrong token")
@@ -128,6 +115,9 @@ class Game{//!  MAIN CLASS
     }
 
 }
+
+
+
 /**
  * Represents the player and the WebSocket that links it with the server
  */
@@ -138,9 +128,13 @@ class ServerSidePlayer{
      */
     constructor(ws,token){
         this.ws = ws;
+        this.ws.onclose = ()=>{
+            this.disconnect(1006)
+        }
         this.token = token;
         this.send("TOKEN",this.token) //sends the auth token to the player
-        this.ws.onmessage = this._onmessage
+        this.ws.onmessage =(messageEvent)=>{this._onmessage(messageEvent)}
+        this.promises = new Map()
     }
     /**
      * Disconects the WebSocket
@@ -203,6 +197,8 @@ class ServerSidePlayer{
         
     }
 }
+
+
 /**
  * A match (room) in which a game is played 
  */
@@ -225,6 +221,8 @@ class Match{
         this.player.send("JOINED",this.code)
     }
 }
+
+
 /**
  * A Map of elements that uses a common attribute as a key (i.e Players mapped by their token, Matches mapped by their code, etc )
  */
@@ -261,6 +259,8 @@ class Collection extends Map{
        return errorValue 
     }
 }
+
+
 export default {Game,ServerSidePlayer,Match}
 
 /**
