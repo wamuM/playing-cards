@@ -22,8 +22,14 @@ function eventHandler(player,messageEvent){
             if(match.bannedTokens.has(player.token))return player.disconnect(4401,"Unauthorized")
         }
         break;
+        case "START":
+            if(player.match.admin != player)return player.disconnect(4401,"Unauthorized");
+            player.match.hasStarted = true;
+            player.match.sendAll("START")
+            player.match.sendAll("BOARD",JSON.stringify(player.match.board))
+        break;
         default:
-            player.disconnect(4406,"Unknown webSocket verb")
+            player.disconnect(4406,"Unknown WebSocket Verb")
         break;
     }
 

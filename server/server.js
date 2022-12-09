@@ -6,6 +6,7 @@
 import random from "../tools/random.js"
 import eventHandler from "./eventHandler.js";
 import httpFileServer from "./httpfileserver.js"
+import {Board,PlaceableObject} from "../game/placeableComponents.js"
 /**
  * The game object that encapsulates all players and game logic
  */
@@ -209,6 +210,7 @@ class Match{
      * @param {String} code The match code
      */
     constructor(admin,code){
+        this.board = new Board()
         this.code = code
         this.admin = admin 
         this.admin.send("JOINED",[code,"isAdmin=true"])
@@ -219,6 +221,23 @@ class Match{
     join(player){
         this.players.add(player)
         this.player.send("JOINED",this.code)
+    }
+    /**
+     * Sends a request to all clients within the match 
+     * @param {String} verb The request verb (see {@tutorial webSocketVerbs| list of verbs})
+     * @param {String} body The request body
+     * @param {String} [promiseIdentifier] someting to uniquely identify the request so the client can send a reply
+     * @returns {Array<Promise>} Returns a promise if promiseIdentifier was set that will resolved once the client replies
+     * @see protocole
+     * @see ServerSidePlayer.send
+     */
+    sendAll(verb,body,promiseIdentifier){
+        const promises = []
+        this.players.forEach(plr=>{
+            const promise = plr.send(verb,body,promiseIdentifier)
+            if(promise)promises.push(promise)
+        })
+        if(promises.length!=0)return promises
     }
 }
 

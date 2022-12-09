@@ -55,7 +55,7 @@ ws.onmessage = (messageEvent)=>{
             alert("That match is either full or doesn't exist, please try another code or create your own match")
         break;
         case "JOINED":
-            
+            if
         break;
         default:
             this.disconnect(4406,"Unknown webSocket verb")
