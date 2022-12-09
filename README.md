@@ -1,8 +1,18 @@
 # Playing Cards
-Playing Cards (plc) is a [Deno](https://test) (ECMASCRIPT 6.0 - a.k.a JavaScript), OOP library that helps people create and play online card games. 
+Playing Cards (plc) is a [Deno](https://test) (ECMASCRIPT 6.0 - a.k.a JavaScript), OOP library that helps people create and play online card games.
 
 *Note: Although it is possible to use playing cards to make real time card games it is discouraged*
+### Why?
+Playing Cards was made as a project for our IT class. It was made with deno and using Git to allow us to practice. 
+### Broad Goals
+We wanted to achive the following milestones in the following order:
+1- Abstract Cards and Decks `☑️`
+2- Create a place with movable cards and decks `🟨`
+3- Allow mutliple people to connect to that space `☑️`
+4- Allow code to easily check the current state of the game to endorce rules `🟧`
+5- Create an electron version  `❌`
 
+`☑️`(Done) `🟨`(Might Be Done, very likely) `🟧`(Might Be Done, Unlikely) `❌`(Won't be done)
 ## Module Structure
 The plc module is maded of three parts or submodules:
 - the [``game``](./game/): All of the cards abstraction
