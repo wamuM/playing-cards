@@ -6,7 +6,7 @@
 import random from "../tools/random.js"
 import eventHandler from "./eventHandler.js";
 import httpFileServer from "./httpfileserver.js"
-import {Board,PlaceableObject} from "../game/placeableComponents.js"
+import {Board, CartesianEncapsulator} from "../game/cartesianComponents.js"
 /**
  * The game object that encapsulates all players and game logic
  */
