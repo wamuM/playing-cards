@@ -14,7 +14,7 @@ We wanted to achive the following milestones in the following order:
 
 `☑️`(Done) `🟨`(Might Be Done, very likely) `🟧`(Might Be Done, Unlikely) `❌`(Won't be done)
 ## Module Structure
-The plc module is maded of three parts or submodules:
+The plc module is divided in three parts or submodules:
 - the [``game``](./game/): All of the cards abstraction
 - the [``server``](./server/): The webSocket and http server and the main constructor
 - the [``UI``](./UI/): All the client sided files
@@ -23,7 +23,7 @@ And it also uses ``tools``, generic functions (specially random related ones) th
 Everything is wrapped at [mod.js](./mod.js) for easy importantion but it is possible to import invidivual parts of the code. 
 
 ## Terminology
-Although we have tried to use the most intuitive names to avoid confucion this list explains the main terms. 
+Although we have tried to use the most intuitive names to avoid confusion this list explains the main terms. 
 - ``user``: Whoever is using this library to create a game, host a server, etc.
 - ``game``: An instance of the ``Game`` class that contains event listeners to endorce the rules of a card game and that listens and answers the player requests
 - ``match``: A room of players playing the game that has an admin and an entry code
