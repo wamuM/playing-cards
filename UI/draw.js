@@ -19,7 +19,7 @@ function clear() {
  * Draws the game mat 
  */
 
-function background() {
+function drawBackground() {
     ctx.beginPath()
         ctx.fillStyle = '#125722';
         ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight)
@@ -70,4 +70,51 @@ function drawCard(drawableCard, zoom) {
 
 
 
+}
+
+/**
+ * 
+ * @param {Drawable} drawableDeck The object encapsulating the Deck
+ * @param {Drawable} drawableCard The card to be drawn on top of the deck
+ * @param {Number} zoom The zoom factor to adjust proportions
+ */
+function drawDeck(drawableDeck, zoom) {
+    let x = drawableDeck.x
+    let y = drawableDeck.y
+    let drawableCard = drawableDeck.drawableCard
+    let color = drawableDeck.object.display.background // doubtful syntax
+    let size = drawableDeck.object.size
+    ctx.beginPath()
+        ctx.fillStyle = color
+        ctx.fillRect(x, y, (0.618/zoom)*0.2*size, 1/zoom  )
+        drawCard(drawableCard)
+
+}
+
+
+
+
+/**
+ * 
+ * @param {..Iterable} Iterable The iterable object to draw the game
+ */
+function drawAll(Iterable) {
+    clear();
+    drawBackground();
+    for(element of Iterable) {
+        switch(element) {
+                case 'Deck' : 
+                    drawDeck(element)
+                    break;
+
+                case 'Card' : 
+                    drawCard(element)
+                    break;
+
+            default : 
+                throw 'Marcel eres puto subnormal'
+        }
+    }
+
+    
 }
