@@ -23,10 +23,10 @@ for (let i = 0; i < 4; i++) {
     
 }
 
-let defaultDeck  = new Deck(cards)
+let french  = new Deck(cards)
 
 
 
 
-export default {defaultDeck};
+export default {french};
 
