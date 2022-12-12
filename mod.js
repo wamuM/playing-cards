@@ -1,5 +1,5 @@
 import server from "./server/server.js"
-import gameObjects from "./game/gameObjects.js"
+import {Deck,Card} from "./game/gameObjects.js"
 import defaultDecks from "./game/defaultDecks.js"
 export default {
     Game:server.Game,
@@ -8,6 +8,6 @@ export default {
         Player:server.ServerSidePlayer,
     },
     Match:server.Match,
-    EmptyDeck:gameObjects.Deck,
-    Card:gameObjects.Card
+    Deck,
+    Card
 };

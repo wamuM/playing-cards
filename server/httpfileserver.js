@@ -9,6 +9,9 @@ async function serveHttpFileServer(path,requestEvent){
              case "script.js":
                  path = "/../UI/script.js";
              break;
+             case "game.js":
+                path = "/../UI/game.js";
+             break;
              case "style.css":
                  path = "/../UI/style.css";
              break;
@@ -22,7 +25,24 @@ async function serveHttpFileServer(path,requestEvent){
          }
          path = new URL(import.meta.url+"/.."+path);
          file = await Deno.open(path,{read:true})
-         await requestEvent.respondWith(new Response(file.readable));
+         const types = ["js","html","css","jpg"]
+         const type = {
+            "js":"application/javascript",
+            "html":"text/html",
+            "css":"text/css",
+            "jpg":"image/jpeg"
+         }
+        let ctype = ""
+        types.forEach((t)=>{
+            if(path.pathname.endsWith(t))ctype = type[t];
+        })
+         const response = new Response(file.readable,{
+            status:200,
+            headers:{
+                "content-type":ctype+"; charset=utf-8"
+            }
+         })
+         await requestEvent.respondWith(response);
      }catch{
         try{
             await requestEvent.respondWith(new Response("404 Not Found",{status:404}));

@@ -5,8 +5,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${Game.name}</title>
-    <script src="./script.js"></script>
-    <script src="./draw.js" defer></script>
+    <script type="module" src="./script.js"></script>
+    <script type="module" src="./draw.js" defer></script>
+    <script type="module" src="./game.js" defer></script>
+    <script defer>window.loaded = true;</script>
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -16,10 +18,13 @@
         <button id="joinGame">JOIN MATCH</button>
         <button id="createMatch">CREATE MATCH</button>
     </div>
-    <div id="admin">
+    <div id="adminBoard">
         <button id="startGame">START GAME</button>
         <div id="playerAdminList"></div>
     </div>
-    <canvas id="canvas"></canvas>
+    <div id="gameBoard">
+        <canvas id="canvas"></canvas>
+        <h2 id="codeDisplay">None</h2>
+    </div>
 </body>
 </html>

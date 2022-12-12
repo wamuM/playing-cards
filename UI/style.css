@@ -6,8 +6,9 @@
 body{
     background-image:url("./background.jpg");
     background-size:cover;
+    overflow: hidden;
 }
-#admin, #canvas{
+#adminBoard, #gameBoard{
     display:none;
 }
 #canvas{
@@ -17,6 +18,7 @@ body{
     top:0;
     bottom:0;
     background:black;
+    z-index:1;
 }
 #lobby{
     padding: 6vh 2vw 4vh 2vw;
@@ -39,4 +41,34 @@ body{
 }
 #createMatch{
     margin-top:3vh;
+}
+#codeDisplay{
+    font-weight: bold;
+    color:white;
+    outline-color: invert;
+    position:absolute;
+    bottom:0vh;
+    left:2vw;
+}
+#codeDisplay:hover{
+    cursor:copy;
+}
+#adminBoard::before{
+    content: "Admin";
+    transform: rotate(0.5turn);
+    text-align: center;
+    position:relative;
+    top:40vh;
+}
+#adminBoard{
+    background: darkgrey;
+    width:20vw;
+    height:100vh;
+    position:absolute;
+    left:99vw;
+    transition: left ease-in-out 0.5s;
+    z-index: 2;
+}
+#adminBoard:hover{
+    left:80vw;
 }

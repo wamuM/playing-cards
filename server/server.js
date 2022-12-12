@@ -6,7 +6,7 @@
 import random from "../tools/random.js"
 import eventHandler from "./eventHandler.js";
 import httpFileServer from "./httpfileserver.js"
-import {Board, CartesianEncapsulator} from "../game/cartesianComponents.js"
+import {CartesianEncapsulator,Board} from "../game/cartesianComponents.js"
 /**
  * The game object that encapsulates all players and game logic
  */
@@ -23,7 +23,6 @@ class Game{//!  MAIN CLASS
         //? This lets you access the game a player is in within the player scope
         this.players._addModifier = (_col,plr)=>plr.game = this;
         this.matches = new Collection("code");
-
         this.settings = defaultSettings
     }
     addEventListener(eventName,eventListener){
@@ -50,6 +49,7 @@ class Game{//!  MAIN CLASS
      * @param {ExtendedDenoTcpListenOptions} options The connection options
      */
     async listen(options){
+        console.log("Playing Cards Listening with options: "+JSON.stringify(options))
         for await (const connection of Deno.listen(options)){
             (async()=>{
                 http: for await (const requestEvent of Deno.serveHttp(connection)){
@@ -101,7 +101,7 @@ class Game{//!  MAIN CLASS
                 if(player && !player?.ws)player.connect(ws)
                 if(player?.ws)return resolve(player)
                 if(token){//&& !player
-                    ws.close(4403,"Forbidden")
+                    ws.close(4403,"Forbidden: Wrong token")
                     reject("Wrong token")
                     return;
                 }
@@ -144,12 +144,8 @@ class ServerSidePlayer{
      * @see {@tutorial errorCodes| List of CloseEvent codes} 
     */
     disconnect(code,reason){
-        try{
-            this.ws.close(code,reason)
-        }
-        finally{
-            this.ws = null 
-        }
+        this.ws?.close(code,reason)
+        this.ws = null 
     }
     /**
      * Connects the ServerSidePlayer to a websocket
@@ -210,17 +206,17 @@ class Match{
      * @param {String} code The match code
      */
     constructor(admin,code){
-        this.board = new Board()
+        this.board = new Board(this.sendAll)
         this.code = code
-        this.admin = admin 
-        this.admin.send("JOINED",[code,"isAdmin=true"])
         this.players = new Collection("token")
         //? This lets you access the match within the player scope
-        this.player._addModifier = (_col,plr)=>plr.match = this;
+        this.players._addModifier = (_col,plr)=>plr.match = this;
+        this.admin = admin 
+        this.admin.send("JOINED",[code,"isAdmin=true"])
+        this.join(admin)
     }
     join(player){
         this.players.add(player)
-        this.player.send("JOINED",this.code)
     }
     /**
      * Sends a request to all clients within the match 
@@ -238,6 +234,11 @@ class Match{
             if(promise)promises.push(promise)
         })
         if(promises.length!=0)return promises
+    }
+    place(element,x,y){
+        const enc = new CartesianEncapsulator(element,x,y)
+        this.board.push(enc)
+        this.sendAll("BOARD",JSON.stringify(this.board))
     }
 }
 

@@ -11,9 +11,16 @@ class Card{
      * @param {CardDisplayObject} [display] The card display defaults to white background with black color
      * @param {Boolean} flipped Whether the card information is face up
      */
-    constructor(value, suit, display={value,suit,color:"black",background:"white",figure:value},flipped) {
+    constructor(value, suit, display,flipped) {
         this.value = value;
         this.suit = suit;
+        if(!display.value)display.value = value
+        if(!display.suit)display.suit = suit;
+        if(!display.figure)display.figure = suit;
+        if(!display.color)display.color = "black";
+        if(!display.background)display.background = {}
+        if(!display.background.primary)display.background.primary = "white";
+        if(!display.background.accent)display.background.accent = "blue";
         this.display = display;
         this.flipped = flipped;
     }
@@ -35,7 +42,10 @@ class Deck {
      * @param {Iterable<Card>} cards The iterable of cards that makes up the deck
      */
     constructor(cards){
-        this.cards = new Array(cards)
+        this.cards = []
+        for(const e of cards){
+            this.cards.push(e)
+        } 
     }
     /*#not actually jsdoc
     * @returns {Number} size of Deck (may be irrational i.e a Deck of pi cards)
@@ -49,9 +59,10 @@ class Deck {
     */
     shuffle() {
 
-        let ind = length(this.cards) -1
+        let ind = this.cards.length -1;
+        let temp, j;
         while (ind > 0) {
-            j = randint(0, ind+1)
+            j = random.int(0, ind+1)
             temp = this.cards[j]
             this.cards[j] = this.cards[ind]
             this.cards[ind] = temp
@@ -65,17 +76,10 @@ class Deck {
     * @returns {Card} The picked card
     */
     pick(index=false,keepIn=false) {
-        if(!index) {
-            let i = int(0, this.size-1)
-            let card = this.cards[i]
-            if(!keepIn)this.cards.splice(i, 1)
-            return card
-
-        } else {
-            if(!keepIn)this.cards.splice(i, 1)
-            return this.cards[index]
-        }
-
+        if(!index)index = random.int(0, this.size-1)
+        if(!keepIn)this.cards.splice(index, 1)
+        if(index<0)index = this.size+index;
+        return this.cards[index]
     }
     /**
      * Adds a given number of cards to the Deck
@@ -102,7 +106,7 @@ class Deck {
 
 
 
-export default {Deck,Card};
+export {Deck,Card};
 
 
 /**

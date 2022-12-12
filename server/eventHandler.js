@@ -6,30 +6,38 @@
 function eventHandler(player,messageEvent){
     const data = messageEvent.data.split("\r\n")
     const [verb,token,_promiseIdentifier] = data[0].split(" ")
-    if(!token)player.disconnect(4401,"Unauthorized")
-    if(!player.auth(token))player.disconnect("4403","Forbidden")
+    if(!token)player.disconnect(4401,"Unauthorized: No token was provided ")
+    if(!player.auth(token))return player.disconnect("4403","Forbidden: Wrong token")
     if(player.promises.get(_promiseIdentifier))player.promises.get(_promiseIdentifier).resolve(data)
     switch(verb){
-        case "CREATE":
+        case "UPDATEME":{
+            player.send("BOARD",JSON.stringify(player.match.board))
+            break;
+        }
+        case "CREATE":{
             player.game.spawnMatch(player);
-            //spawnMatch also sends JOINED to the client
-        break;
+            
+            break;
+        }
         case "JOIN":{
             const match = player.game.matches.get(data[1])
             if(!match)return player.send("WRONGCODE")
             if(player.game.settings?.maxPlayers>=match.players.size)return player.send("WRONGCODE")
             if(!player.game.settings.allowMidgameJoins && match.hasStarted)return player.send("WRONGCODE")
-            if(match.bannedTokens.has(player.token))return player.disconnect(4401,"Unauthorized")
+            if(match.bannedTokens.has(player.token))return player.disconnect(4401,"Unauthorized: This client was banned")
+            match.add(player)
+            player.send("JOINED",match.code)
+            break;
         }
-        break;
         case "START":
-            if(player.match.admin != player)return player.disconnect(4401,"Unauthorized");
+            if(player.match.admin != player)return player.disconnect(4401,"Unauthorized: Only admin player can start game");
             player.match.hasStarted = true;
             player.match.sendAll("START")
             player.match.sendAll("BOARD",JSON.stringify(player.match.board))
+            player.game.onstart(player.match)
         break;
         default:
-            player.disconnect(4406,"Unknown WebSocket Verb")
+            player.disconnect(4406,"Wrong Method: Unknown WebSocket Verb")
         break;
     }
 

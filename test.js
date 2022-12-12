@@ -10,9 +10,12 @@ game.addEventListener("join",(player)=>{
     
 })
 game.addEventListener("start",(match)=>{
-    const deck = new pc.defaultDecks.french();
+    console.log("Game Started :O")
+    const deck = pc.defaultDecks.french();
     deck.shuffle();
-    match.place(deck)
+    match.place(deck,100,100)
+    //console.log(match.board)
+    //console.log(JSON.stringify(match.board))
 })
 game.listen({port:8080})
 
