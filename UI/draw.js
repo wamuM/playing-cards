@@ -1,3 +1,5 @@
+
+
 //todo code a draw function that draws each card, card slot, shadow
 
 //todo  clear -> background -> Drawable<card> -> Drawable<deck> -> card slot -> shadow (and picked card) --> player hand(toggable) 
@@ -118,3 +120,5 @@ function drawAll(Iterable) {
 
     
 }
+
+

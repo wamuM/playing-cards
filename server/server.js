@@ -37,7 +37,7 @@ class Game{//!  MAIN CLASS
     spawnMatch(player){
         let code;
         do{
-            code = random.string("QWERTYUIOASDFGHJKLZXCVBNM1234567890",5)
+            code = random.string("QWERTYUIOPASDFGHJKLZXCVBNM1234567890",5)
         }
         while(this.matches.get(code))
             
