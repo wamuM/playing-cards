@@ -45,10 +45,10 @@ body{
 #codeDisplay{
     font-weight: bold;
     color:white;
-    outline-color: invert;
     position:absolute;
     bottom:0vh;
     left:2vw;
+    z-index:4;
 }
 #codeDisplay:hover{
     cursor:copy;

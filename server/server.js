@@ -25,6 +25,12 @@ class Game{//!  MAIN CLASS
         this.matches = new Collection("code");
         this.settings = defaultSettings
     }
+    /**
+     * Sets the event listeners of the specified event
+     * @param {String} eventName The name of the event
+     * @param {Function} eventListener The event handler
+     * @see {@tutorial userEvents|List of all possible events}
+     */
     addEventListener(eventName,eventListener){
         this["on"+eventName] = eventListener
     }
@@ -96,10 +102,10 @@ class Game{//!  MAIN CLASS
             ws.onmessage = (messageEvent)=>{
                 const data = messageEvent.data.split("\r\n")
                 let [verb,token] = data[0].split(" ")
-                if(verb != "CONNECT")return ws.close(4405,"The first request should always be CONNECT")
                 let player = this.players.get(token)
                 if(player && !player?.ws)player.connect(ws)
                 if(player?.ws)return resolve(player)
+                if(verb != "CONNECT")return ws.close(4405,"The first request should always be CONNECT")
                 if(token){//&& !player
                     ws.close(4403,"Forbidden: Wrong token")
                     reject("Wrong token")
@@ -136,6 +142,9 @@ class ServerSidePlayer{
         this.send("TOKEN",this.token) //sends the auth token to the player
         this.ws.onmessage =(messageEvent)=>{this._onmessage(messageEvent)}
         this.promises = new Map()
+        this.matches = false;
+        this.code = false;
+        this.game = false;
     }
     /**
      * Disconects the WebSocket
@@ -153,6 +162,15 @@ class ServerSidePlayer{
      */
     connect(ws){
         this.ws = ws
+        if(this.match){
+            this.send("JOINED",[this.match.code,this.nickname,this.match.admin.token==this.token?"isAdmin=true":undefined])
+            this.match.sendAll("NEWPLAYER",this.nickname)
+            if(this.match.hasStarted){
+                this.send("START")
+                this.send("BOARD",JSON.stringify(this.match.board))
+            }
+        }
+        this.ws.onmessage =(messageEvent)=>{this._onmessage(messageEvent)}
     }
     get connected(){return this.ws==null?false:this.ws.readyState==1}
     /**
@@ -206,16 +224,17 @@ class Match{
      * @param {String} code The match code
      */
     constructor(admin,code){
-        this.board = new Board(this.sendAll)
+        this.board = new Board()
         this.code = code
         this.players = new Collection("token")
         //? This lets you access the match within the player scope
         this.players._addModifier = (_col,plr)=>plr.match = this;
         this.admin = admin 
-        this.admin.send("JOINED",[code,"isAdmin=true"])
+        this.bannedTokens = new Set()
         this.join(admin)
     }
     join(player){
+        player.nickname = "player"+this.players.size
         this.players.add(player)
     }
     /**
@@ -236,9 +255,25 @@ class Match{
         if(promises.length!=0)return promises
     }
     place(element,x,y){
-        const enc = new CartesianEncapsulator(element,x,y)
-        this.board.push(enc)
-        this.sendAll("BOARD",JSON.stringify(this.board))
+        this.board.place(element,x,y)
+        this.sendAll("UPDATE",["Place",JSON.stringify(this.board)])
+    }
+    replace(element){
+        this.board[element.id] = element;
+        this.sendAll("UPDATE",["Modify",JSON.stringify(element),index])
+    }
+    modify(element,fn){
+        this.replace(element.id,fn(this.board[index]))
+    }
+    remove(element){
+        const index = element.id
+        this.sendAll("UPDATE",["Delete",{},index])
+        this.board.forEach((_element,i)=>{
+            if(i>=index){
+                this.board[index].id = index-1
+                this.board[index].trueObject.id = index-1
+            }
+        })
     }
 }
 

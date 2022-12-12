@@ -6,6 +6,11 @@ if(confirm("Do you want to reset the token?")){
 }
 window.logAll = true;
 window.board = [];
+window.players = [];
+window.zoomSpeed = 0.0075
+window.zoom = 1
+window.cameraX = 0
+window.cameraY = 0
 
 const ws = new WebSocket(`ws://${window.location.host}${window.location.pathname}?ws=true`)
 let TOKEN = localStorage.getItem("token");
@@ -83,7 +88,11 @@ ws.onmessage = (messageEvent)=>{
             alert("That match is either full or doesn't exist, please try another code or create your own match")
         break;
         case "JOINED":
-            window.joinMatch(data[1],!!data[2])
+            window.joinMatch(data[1],!!data[3])
+            window.nickname = data[2]
+        break;
+        case "NEWPLAYER":
+            window.players.push([data[1],data[2]])
         break;
         case "UPDATE":{
             switch(data[1]){
@@ -92,6 +101,9 @@ ws.onmessage = (messageEvent)=>{
                 break;
                 case "Delete":
                     window.board.splice(0,Number.parseInt(data[3]))
+                    window.board.forEach((_element,i)=>{
+                        if(i>=index)this.board[index].id = index-1
+                    })
                 break;
                 case "Add":
                     window.board.push(JSON.parse(data[2]))

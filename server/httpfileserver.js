@@ -3,6 +3,9 @@ async function serveHttpFileServer(path,requestEvent){
      let file;
      try{
          switch(path){
+             case "keys.js":
+                 path = "/../UI/keys.js"
+             break;
              case "draw.js":
                  path = "/../UI/draw.js"
              break;

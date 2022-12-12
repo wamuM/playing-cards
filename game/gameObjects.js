@@ -58,7 +58,6 @@ class Deck {
     * Shuffles the Deck of cards using the Fischer-Yates algorithm and the pseudo-random Math.random() method
     */
     shuffle() {
-
         let ind = this.cards.length -1;
         let temp, j;
         while (ind > 0) {
@@ -68,6 +67,7 @@ class Deck {
             this.cards[ind] = temp
             ind-- 
         }
+        return this
     }
     /**
      * Picks a card

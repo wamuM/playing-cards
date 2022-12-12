@@ -6,16 +6,20 @@ const defaultSettings = {
 }
 const game = new Game("Black Jack",defaultSettings)
 
+game.addEventListener("create",(match)=>{
+
+})
 game.addEventListener("join",(player)=>{
     
 })
 game.addEventListener("start",(match)=>{
     console.log("Game Started :O")
-    const deck = pc.defaultDecks.french();
-    deck.shuffle();
-    match.place(deck,100,100)
-    //console.log(match.board)
-    //console.log(JSON.stringify(match.board))
+    const deck = pc.defaultDecks.french().shuffle()
+    let placedDeck = match.place(deck,100,100)
+   // let card = deck.pick(0)
+    // match.replace(deck)
+    // let placedCard = match.place(card,200,200)
+
 })
 game.listen({port:8080})
 

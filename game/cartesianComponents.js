@@ -2,20 +2,16 @@
  * 
  */
 class Board extends Array{
-    constructor(send,...args){
+    constructor(...args){
         super(...args)
-        this.send = send;
     }
     place(element,x,y){
         let car = new CartesianEncapsulator(element)
         car.id = this.length
-        car.x = x;
-        car.y = y;
+        element.id = car.id
+        car.object.x = x;
+        car.object.y = y;
         this.push(car)
-    }
-    modify(index,element){
-        this[index].modify(...args)
-        this.send("UPDATE",["Modify",element,index])
     }
 }
 /**
@@ -23,6 +19,7 @@ class Board extends Array{
  */
 class CartesianEncapsulator{
     constructor(element){
+        if(!element)throw "An element must be provided to the CartesianEncapsulator"
         this.trueObject = element;
         this.object = Object.assign({},element);
         this.trueObject.toJSON=()=>undefined;
