@@ -1,2 +1,0 @@
-# Stablishing a WebSocket connection
-The client should send a HTTP request to upgrade to WebSocket to the listened port (See {@link Game.listen} or {@link serveWebSocket}). The server will wait for a ``CONNECT`` webSocket request and send the relevant information
